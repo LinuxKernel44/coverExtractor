@@ -76,11 +76,12 @@ private val ALPHABET = listOf("#") + ('A'..'Z').map { it.toString() }
 fun LibraryScreen(
     viewModel: LibraryViewModel,
     contentPadding: PaddingValues,
-    onOpenPreview: (String) -> Unit
+    onOpenPreview: (String) -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     val folderPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> if (uri != null) viewModel.chooseFolder(uri) }
+    ) { uri -> if (uri != null) viewModel.addFolder(uri) }
 
     var searchActive by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -133,15 +134,15 @@ fun LibraryScreen(
                         }
                         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                             DropdownMenuItem(
-                                text = { Text("Rescan folder") },
+                                text = { Text("Rescan folders") },
                                 leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = null) },
-                                enabled = viewModel.folderUri != null,
+                                enabled = viewModel.folderUris.isNotEmpty(),
                                 onClick = { menuExpanded = false; viewModel.startScan() }
                             )
                             DropdownMenuItem(
-                                text = { Text("Change folder") },
+                                text = { Text("Manage folders") },
                                 leadingIcon = { Icon(Icons.Filled.Folder, contentDescription = null) },
-                                onClick = { menuExpanded = false; folderPickerLauncher.launch(null) }
+                                onClick = { menuExpanded = false; onOpenSettings() }
                             )
                         }
                     }
@@ -165,7 +166,7 @@ fun LibraryScreen(
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
-                viewModel.folderUri == null -> ChooseFolderState { folderPickerLauncher.launch(null) }
+                viewModel.folderUris.isEmpty() -> ChooseFolderState { folderPickerLauncher.launch(null) }
                 viewModel.scanProgress != null -> ScanningState(viewModel.scanProgress!!)
                 viewModel.entries.isEmpty() -> EmptyLibraryState(onRescan = { viewModel.startScan() })
                 else -> LibraryGrid(
@@ -195,12 +196,13 @@ private fun ChooseFolderState(onChoose: () -> Unit) {
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            "No folder selected",
+            "No folders added",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
         )
         Text(
-            "Choose a folder to scan for audio files — subfolders are included automatically.",
+            "Choose a folder to scan for audio files — subfolders are included automatically. " +
+                "You can add more folders later from Manage folders.",
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

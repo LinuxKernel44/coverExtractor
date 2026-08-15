@@ -22,11 +22,13 @@ import androidx.navigation.compose.rememberNavController
 import com.coverextractor.app.ResultItem
 import com.coverextractor.app.library.CoverPreviewScreen
 import com.coverextractor.app.library.LibraryScreen
+import com.coverextractor.app.library.LibrarySettingsScreen
 import com.coverextractor.app.library.LibraryViewModel
 
 private const val ROUTE_QUICK_PICK = "quickPick"
 private const val ROUTE_LIBRARY = "library"
 private const val ROUTE_PREVIEW = "library/preview/{entryId}"
+private const val ROUTE_LIBRARY_SETTINGS = "library/settings"
 
 @Composable
 fun AppRoot(results: List<ResultItem>, onPickFiles: () -> Unit) {
@@ -80,7 +82,8 @@ fun AppRoot(results: List<ResultItem>, onPickFiles: () -> Unit) {
                 LibraryScreen(
                     viewModel = libraryViewModel,
                     contentPadding = padding,
-                    onOpenPreview = { entryId -> navController.navigate("library/preview/$entryId") }
+                    onOpenPreview = { entryId -> navController.navigate("library/preview/$entryId") },
+                    onOpenSettings = { navController.navigate(ROUTE_LIBRARY_SETTINGS) }
                 )
             }
             composable(ROUTE_PREVIEW) { entry ->
@@ -88,6 +91,12 @@ fun AppRoot(results: List<ResultItem>, onPickFiles: () -> Unit) {
                 CoverPreviewScreen(
                     viewModel = libraryViewModel,
                     entryId = entryId,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(ROUTE_LIBRARY_SETTINGS) {
+                LibrarySettingsScreen(
+                    viewModel = libraryViewModel,
                     onBack = { navController.popBackStack() }
                 )
             }

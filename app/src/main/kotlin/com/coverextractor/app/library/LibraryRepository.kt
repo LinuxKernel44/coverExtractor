@@ -8,10 +8,10 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * Persists the chosen SAF folder and the last scan's results, so reopening the Library tab is
- * instant instead of re-scanning the whole tree every time. The actual cover bytes live as
- * individual files under [coversDir], keyed by their content hash ([LibraryEntry.id]) - the JSON
- * index only stores small metadata, never the image bytes themselves.
+ * Persists the chosen SAF folders and the last scan's results, so reopening the Library tab is
+ * instant instead of re-scanning every tree again. The actual cover bytes live as individual
+ * files under [coversDir], keyed by their content hash ([LibraryEntry.id]) - the JSON index only
+ * stores small metadata, never the image bytes themselves.
  */
 class LibraryRepository(private val context: Context) {
 
@@ -19,15 +19,46 @@ class LibraryRepository(private val context: Context) {
     private val indexFile = File(context.filesDir, "library_index.json")
     private val coversDir = File(context.filesDir, "library_covers").apply { mkdirs() }
 
-    fun getFolderUri(): Uri? = prefs.getString(KEY_FOLDER_URI, null)?.let { Uri.parse(it) }
+    fun getFolderUris(): List<Uri> {
+        val raw = prefs.getString(KEY_FOLDER_URIS, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(raw)
+            (0 until array.length()).map { Uri.parse(array.getString(it)) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
 
-    fun setFolderUri(uri: Uri) {
-        context.contentResolver.takePersistableUriPermission(
-            uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION
-        )
-        prefs.edit().putString(KEY_FOLDER_URI, uri.toString()).apply()
+    /** Adds a folder (if not already tracked) and takes a persistent read grant on it. */
+    fun addFolder(uri: Uri) {
+        context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val current = getFolderUris().map { it.toString() }
+        if (uri.toString() in current) return
+        saveFolderUris(current + uri.toString())
         clearCache()
+    }
+
+    fun removeFolder(uri: Uri) {
+        try {
+            context.contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (e: Exception) {
+            // Permission may already be gone (e.g. user revoked it from Settings) - fine to ignore.
+        }
+        val remaining = getFolderUris().map { it.toString() }.filter { it != uri.toString() }
+        saveFolderUris(remaining)
+        clearCache()
+    }
+
+    private fun saveFolderUris(uris: List<String>) {
+        val array = JSONArray()
+        uris.forEach { array.put(it) }
+        prefs.edit().putString(KEY_FOLDER_URIS, array.toString()).apply()
+    }
+
+    /** Best-effort human-readable name for a SAF tree URI, e.g. ".../tree/primary:Music/Rock" -> "Rock". */
+    fun folderDisplayName(uri: Uri): String {
+        val decoded = Uri.decode(uri.lastPathSegment ?: uri.toString())
+        return decoded.substringAfterLast('/').ifBlank { decoded }
     }
 
     fun clearCache() {
@@ -96,6 +127,6 @@ class LibraryRepository(private val context: Context) {
     }
 
     companion object {
-        private const val KEY_FOLDER_URI = "folder_uri"
+        private const val KEY_FOLDER_URIS = "folder_uris"
     }
 }

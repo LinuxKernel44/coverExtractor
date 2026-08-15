@@ -23,7 +23,16 @@ object CoverExtractor {
 
     fun extract(context: Context, uri: Uri): CoverResult {
         readWithMediaMetadataRetriever(context, uri)?.let { return CoverResult.Found(it) }
+        return extractFallbackOnly(context, uri)
+    }
 
+    /**
+     * Same fallback binary parsers as [extract], without the initial `MediaMetadataRetriever`
+     * attempt. Exposed so callers who already opened their own `MediaMetadataRetriever` (e.g. to
+     * read tags) can try its `embeddedPicture` first and only pay for a full byte read here if
+     * that came back empty, instead of instantiating a second retriever.
+     */
+    fun extractFallbackOnly(context: Context, uri: Uri): CoverResult {
         val bytes = try {
             context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 ?: return CoverResult.Failed("Could not open file")
@@ -39,6 +48,9 @@ object CoverExtractor {
 
         return CoverResult.Found(toExtractedCover(raw.first, raw.second))
     }
+
+    /** Wraps a raw picture (e.g. from a caller's own retriever) into a lossless [ExtractedCover]. */
+    fun wrapRawPicture(bytes: ByteArray): ExtractedCover = toExtractedCover(bytes, null)
 
     private fun readWithMediaMetadataRetriever(context: Context, uri: Uri): ExtractedCover? {
         val retriever = MediaMetadataRetriever()

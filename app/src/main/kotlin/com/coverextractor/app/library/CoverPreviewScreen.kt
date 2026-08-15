@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -53,6 +55,33 @@ fun CoverPreviewScreen(viewModel: LibraryViewModel, entryId: String, onBack: () 
                     }
                 }
             )
+        },
+        // Pinned outside the scrollable content below so it's always reachable, no matter how
+        // long the "Shared by" list gets (some albums have 15+ tracks sharing one cover).
+        bottomBar = {
+            if (entry != null) {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            saving = true
+                            val uri = viewModel.saveEntryToGallery(entry)
+                            saving = false
+                            saved = uri != null
+                        }
+                    },
+                    enabled = !saving && !saved,
+                    modifier = Modifier.fillMaxWidth().padding(24.dp)
+                ) {
+                    when {
+                        saving -> CircularProgressIndicator(modifier = Modifier.padding(2.dp))
+                        saved -> {
+                            Icon(Icons.Filled.CheckCircle, contentDescription = null)
+                            Text(" Saved to Pictures/coverExtractor")
+                        }
+                        else -> Text("Save to gallery")
+                    }
+                }
+            }
         }
     ) { padding ->
         if (entry == null) {
@@ -63,7 +92,11 @@ fun CoverPreviewScreen(viewModel: LibraryViewModel, entryId: String, onBack: () 
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -100,28 +133,6 @@ fun CoverPreviewScreen(viewModel: LibraryViewModel, entryId: String, onBack: () 
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-            }
-
-            Button(
-                onClick = {
-                    scope.launch {
-                        saving = true
-                        val uri = viewModel.saveEntryToGallery(entry)
-                        saving = false
-                        saved = uri != null
-                    }
-                },
-                enabled = !saving && !saved,
-                modifier = Modifier.padding(top = 24.dp)
-            ) {
-                when {
-                    saving -> CircularProgressIndicator(modifier = Modifier.padding(2.dp))
-                    saved -> {
-                        Icon(Icons.Filled.CheckCircle, contentDescription = null)
-                        Text(" Saved to Pictures/coverExtractor")
-                    }
-                    else -> Text("Save to gallery")
                 }
             }
         }

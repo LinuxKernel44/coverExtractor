@@ -22,7 +22,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Bitmap>?) = size > 200
     }
 
-    var folderUri by mutableStateOf(repository.getFolderUri())
+    var folderUris by mutableStateOf(repository.getFolderUris())
         private set
     var entries by mutableStateOf<List<LibraryEntry>>(emptyList())
         private set
@@ -48,21 +48,32 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             }
         }
 
-    fun chooseFolder(uri: Uri) {
-        repository.setFolderUri(uri)
-        folderUri = uri
+    fun addFolder(uri: Uri) {
+        repository.addFolder(uri)
+        folderUris = repository.getFolderUris()
         entries = emptyList()
         thumbnailCache.clear()
         startScan()
     }
 
+    fun removeFolder(uri: Uri) {
+        repository.removeFolder(uri)
+        folderUris = repository.getFolderUris()
+        entries = emptyList()
+        thumbnailCache.clear()
+        if (folderUris.isNotEmpty()) startScan()
+    }
+
+    fun folderDisplayName(uri: Uri): String = repository.folderDisplayName(uri)
+
     fun startScan() {
-        val tree = folderUri ?: return
+        val trees = folderUris
+        if (trees.isEmpty()) return
         viewModelScope.launch {
             scanProgress = ScanProgress(0, 0, done = false)
             val context = getApplication<Application>()
             val result = withContext(Dispatchers.IO) {
-                val files = LibraryScanner.listAudioFiles(context, tree)
+                val files = trees.flatMap { LibraryScanner.listAudioFiles(context, it) }
                 LibraryScanner.scanAndGroup(context, repository, files) { progress ->
                     viewModelScope.launch { scanProgress = progress }
                 }
