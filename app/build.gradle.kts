@@ -25,8 +25,8 @@ android {
         applicationId = "com.coverextractor.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -93,6 +93,7 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
+    implementation(libs.navigation.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

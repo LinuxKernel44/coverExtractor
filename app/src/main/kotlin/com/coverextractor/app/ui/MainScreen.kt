@@ -27,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,11 +41,13 @@ import com.coverextractor.app.Status
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(results: List<ResultItem>, onPickFiles: () -> Unit) {
+fun MainScreen(results: List<ResultItem>, onPickFiles: () -> Unit, contentPadding: PaddingValues = PaddingValues()) {
     Scaffold(
         topBar = { TopAppBar(title = { Text("coverExtractor") }) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(bottom = contentPadding.calculateBottomPadding())
+        ) {
             Button(
                 onClick = onPickFiles,
                 modifier = Modifier.fillMaxWidth().padding(16.dp)

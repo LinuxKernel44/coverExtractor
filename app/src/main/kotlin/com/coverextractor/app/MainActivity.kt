@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -14,13 +13,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.coverextractor.app.ui.MainScreen
+import com.coverextractor.app.ui.AppRoot
+import com.coverextractor.app.ui.theme.CoverExtractorTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -65,9 +64,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            MaterialTheme {
+            CoverExtractorTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    MainScreen(
+                    AppRoot(
                         results = results,
                         onPickFiles = { pickFilesLauncher.launch(arrayOf("*/*")) }
                     )
@@ -121,7 +120,7 @@ class MainActivity : ComponentActivity() {
                         withContext(Dispatchers.IO) { GallerySaver.save(this@MainActivity, baseName, outcome.cover) }
                     }
                     if (savedUri != null) {
-                        val thumbnail = withContext(Dispatchers.Default) { decodeSampledThumbnail(outcome.cover.bytes) }
+                        val thumbnail = withContext(Dispatchers.Default) { ImageUtils.decodeSampledThumbnail(outcome.cover.bytes) }
                         Status.Saved(thumbnail, savedUri)
                     } else {
                         Status.Error("Could not save to gallery")
@@ -154,17 +153,6 @@ class MainActivity : ComponentActivity() {
         val withoutExtension = displayName.substringBeforeLast('.', displayName)
         val sanitized = withoutExtension.replace(Regex("[^A-Za-z0-9 ._-]"), "_").trim()
         return sanitized.ifBlank { "cover" }.take(80)
-    }
-
-    private fun decodeSampledThumbnail(bytes: ByteArray, reqSize: Int = 256): Bitmap? = try {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= reqSize && bounds.outHeight / (sample * 2) >= reqSize) sample *= 2
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
-    } catch (e: Exception) {
-        null
     }
 }
 
