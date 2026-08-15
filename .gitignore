@@ -1,0 +1,13 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+build/
+/captures
+.externalNativeBuild
+.cxx
+
+# Signing material (keystore.properties, coverextractor.jks) is intentionally NOT ignored here:
+# this repository is private and the user asked for the release signature to be committed
+# alongside CLAUDE.md, which documents the password. See CLAUDE.md.
