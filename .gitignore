@@ -12,3 +12,12 @@ build/
 # Signing material (keystore.properties, coverextractor.jks) is intentionally NOT ignored here:
 # this repository is private and the user asked for the release signature to be committed
 # alongside CLAUDE.md, which documents the password. See CLAUDE.md.
+
+# secrets / local-only
+*.jks
+*.keystore
+keystore.properties
+local.properties
+android/key
+CLAUDE.md
+.env
